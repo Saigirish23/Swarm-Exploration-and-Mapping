@@ -1,0 +1,26 @@
+robot2_explorer:
+  ros__parameters:
+    use_sim_time: true
+    robot_name: robot2
+    map_topic: /robot2/map
+    map_frame: robot2/map
+    base_frame: robot2/base_link
+    goal_action: /robot2/navigate_to_pose
+    goal_pose_topic: /robot2/goal_pose
+    claim_topic: /swarm/claim_requests
+    claimed_frontiers_topic: /swarm/claimed_frontiers
+    claim_frame: map
+    claim_radius: 0.6
+    exploration_status_topic: /robot2/exploration_status
+    exploration_done_topic: /swarm/exploration_done
+    frontier_marker_topic: /robot2/frontier_markers
+    exploration_period: 5.0
+    min_frontier_size: 5
+    distance_weight: 1.0
+    min_unknown_cells: 0
+    goal_unknown_clearance_cells: 0
+    goal_clearance_cells: 5
+    world_min_x: -5.5
+    world_max_x: 5.5
+    world_min_y: -5.5
+    world_max_y: 5.5

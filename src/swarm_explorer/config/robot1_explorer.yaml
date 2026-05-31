@@ -1,0 +1,30 @@
+robot1_explorer:
+  ros__parameters:
+    use_sim_time: true
+    robot_name: robot1
+    map_topic: /robot1/map
+    map_frame: robot1/map
+    base_frame: robot1/base_link
+    goal_action: /robot1/navigate_to_pose
+    goal_pose_topic: /robot1/goal_pose
+    claim_topic: /swarm/claim_requests
+    claimed_frontiers_topic: /swarm/claimed_frontiers
+    claim_frame: map
+    claim_radius: 0.6
+    exploration_status_topic: /robot1/exploration_status
+    exploration_done_topic: /swarm/exploration_done
+    frontier_marker_topic: /robot1/frontier_markers
+    exploration_period: 5.0
+    min_frontier_size: 5
+    distance_weight: 1.0
+    min_unknown_cells: 0
+    goal_unknown_clearance_cells: 0
+    goal_clearance_cells: 5
+    save_map_on_complete: true
+    save_map_service: /robot1/map_saver/save_map
+    save_map_topic: /merged_map
+    save_map_url: file:///home/saigirish/tb3_swarm_ws/src/swarm_explorer/maps/merged_map.yaml
+    world_min_x: -5.5
+    world_max_x: 5.5
+    world_min_y: -5.5
+    world_max_y: 5.5
