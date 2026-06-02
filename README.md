@@ -1,4 +1,4 @@
-# 🤖 Swarm Explorer — Multi-Robot Autonomous Exploration & Mapping
+# Swarm Explorer - Multi-Robot Autonomous Exploration & Mapping
 
 <div align="center">
 
@@ -13,24 +13,25 @@
 
 ---
 
-## 📖 Overview
+# 📖 Overview
 
 Swarm Explorer is a ROS 2 Humble multi-robot exploration framework where two TurtleBot3 Burger robots perform autonomous SLAM, frontier exploration, cooperative task allocation, and map merging in Gazebo.
 
-### Key Capabilities
+## ✨ Key Capabilities
 
 * 🗺️ Cartographer-based SLAM for each robot
-* 🔄 Real-time map merging
+* 🔧 Custom submap decoder converting Cartographer textures into ROS OccupancyGrid maps
+* 🔄 Real-time map merging with live TF alignment
 * 🎯 Frontier-based autonomous exploration
-* 🤝 Multi-robot coordination
+* 🤝 Multi-robot coordination through frontier claiming
 * 🚧 Robot-to-robot collision avoidance
 * 📍 Nav2 autonomous navigation
-* 💾 Automatic map saving
-* 📊 RViz visualization and debugging
+* 💾 Automatic map saving on exploration completion
+* 📊 RViz visualization and debugging tools
 
 ---
 
-## 🛠️ Tech Stack
+# 🛠️ Tech Stack
 
 | Component     | Technology          |
 | ------------- | ------------------- |
@@ -45,16 +46,16 @@ Swarm Explorer is a ROS 2 Humble multi-robot exploration framework where two Tur
 
 ---
 
-## 🏗️ System Architecture
+# 🏗️ System Architecture
 
 ```text
-Robot1 Scan/Odom ──► Cartographer ──► Submap Decoder ──► /robot1/map
-                                                            │
-                                                            ▼
-                                                      Map Merger
-                                                            ▲
-                                                            │
-Robot2 Scan/Odom ──► Cartographer ──► Submap Decoder ──► /robot2/map
+Robot1 Scan/Odom ──► Cartographer ──► Custom Submap Decoder ──► /robot1/map
+                                                                    │
+                                                                    ▼
+                                                              Map Merger
+                                                                    ▲
+                                                                    │
+Robot2 Scan/Odom ──► Cartographer ──► Custom Submap Decoder ──► /robot2/map
 
                               ▼
                       Frontier Detection
@@ -66,9 +67,23 @@ Robot2 Scan/Odom ──► Cartographer ──► Submap Decoder ──► /robo
                        Robot Navigation
 ```
 
+### Why a Custom Submap Decoder?
+
+Cartographer does not natively publish standard `OccupancyGrid` maps in namespaced multi-robot configurations.
+
+The custom decoder:
+
+1. Queries Cartographer's internal submap service.
+2. Decompresses gzipped texture data.
+3. Converts grayscale textures into occupancy probabilities.
+4. Applies Cartographer's occupancy conversion formula.
+5. Publishes standard ROS OccupancyGrid maps for Nav2 and map merging.
+
+This bridges Cartographer's internal representation and the ROS navigation stack.
+
 ---
 
-## 🔄 TF Architecture
+# 🔄 TF Architecture
 
 ```text
 map
@@ -83,62 +98,89 @@ map
             └── robot2/base_link
 ```
 
-### Publishers
+### TF Publishers
 
-* Cartographer → `robotX/map → robotX/odom`
-* Gazebo → `robotX/odom → robotX/base_footprint`
-* robot_state_publisher → `robotX/base_footprint → robotX/base_link`
+| Transform                                | Publisher             |
+| ---------------------------------------- | --------------------- |
+| robotX/map → robotX/odom                 | Cartographer          |
+| robotX/odom → robotX/base_footprint      | Gazebo                |
+| robotX/base_footprint → robotX/base_link | robot_state_publisher |
 
 ---
 
-## 📂 Repository Structure
+# 📂 Repository Structure
 
 ```text
 tb3_swarm_ws/
 ├── src/
-│   ├── swarm_explorer/
-│   │   ├── launch/
-│   │   ├── config/
-│   │   ├── rviz/
-│   │   └── swarm_explorer/
-│   │       ├── submap_to_map_node.py
-│   │       ├── map_merger.py
-│   │       ├── robot_explorer.py
-│   │       ├── frontier_detector.py
-│   │       ├── frontier_coordinator.py
-│   │       ├── nav2_goal_client.py
-│   │       └── waypoint_patrol.py
+│
+├── swarm_explorer/
+│   ├── launch/
+│   │   ├── swarm_mapping.launch.py
+│   │   ├── swarm_exploration.launch.py
+│   │   ├── swarm_exploration_coordinated.launch.py
+│   │   ├── rviz_swarm.launch.py
+│   │   └── two_robot_patrol.launch.py
 │   │
-│   ├── turtlebot3_cartographer/
-│   ├── turtlebot3_navigation2/
-│   └── turtlebot3_gazebo/
+│   ├── config/
+│   │   ├── map_merge.yaml
+│   │   ├── robot1_explorer.yaml
+│   │   └── robot2_explorer.yaml
+│   │
+│   ├── rviz/
+│   │   └── two_tb3_swarm.rviz
+│   │
+│   └── swarm_explorer/
+│       ├── submap_to_map_node.py
+│       ├── map_merger.py
+│       ├── robot_explorer.py
+│       ├── frontier_detector.py
+│       ├── frontier_coordinator.py
+│       ├── goal_selector.py
+│       ├── nav2_goal_client.py
+│       ├── robot_footprint_broadcaster.py
+│       └── waypoint_patrol.py
+│
+├── turtlebot3_cartographer/
+│   ├── launch/
+│   └── config/
+│
+├── turtlebot3_navigation2/
+│   ├── launch/
+│   └── param/
+│
+└── turtlebot3_gazebo/
+    ├── launch/
+    └── worlds/
 ```
 
 ---
 
-## 🚀 Quick Start
+# 🚀 Quick Start
 
-### Build
+## Build Workspace
 
 ```bash
 cd ~/tb3_swarm_ws
+
 colcon build --symlink-install
+
 source install/setup.bash
 ```
 
-### Launch Autonomous Exploration
+## Launch Autonomous Exploration
 
 ```bash
 ros2 launch swarm_explorer swarm_exploration.launch.py
 ```
 
-### Launch Coordinated Exploration
+## Launch Coordinated Exploration
 
 ```bash
 ros2 launch swarm_explorer swarm_exploration_coordinated.launch.py
 ```
 
-### Launch Waypoint Patrol
+## Launch Waypoint Patrol
 
 ```bash
 ros2 launch swarm_explorer swarm_mapping.launch.py
@@ -146,7 +188,7 @@ ros2 launch swarm_explorer swarm_mapping.launch.py
 
 ---
 
-## 🎮 Modes of Operation
+# 🎮 Modes of Operation
 
 | Mode              | Description                              |
 | ----------------- | ---------------------------------------- |
@@ -157,46 +199,99 @@ ros2 launch swarm_explorer swarm_mapping.launch.py
 
 ---
 
-## 🔧 Core Components
+# 🔧 Core Components
 
-### 🗺️ Submap Decoder
+## 🗺️ Custom Submap Decoder
 
-Converts Cartographer submap textures into standard ROS `OccupancyGrid` maps.
+Converts Cartographer's internal submap textures into standard ROS OccupancyGrid maps.
 
-### 🔄 Map Merger
+Features:
 
-Combines `/robot1/map` and `/robot2/map` into `/merged_map` using live TF alignment.
-
-### 🎯 Frontier Exploration
-
-Detects boundaries between known and unknown space and autonomously selects exploration targets.
-
-### 🤝 Frontier Coordination
-
-Prevents robots from selecting the same frontier through a shared claiming protocol.
-
-### 🚧 Collision Avoidance
-
-Broadcasts robot footprints as obstacles so teammates avoid planning through one another.
+* Queries `/robotX/submap_query`
+* Decompresses gzipped texture data
+* Handles 7-bit and 8-bit pixel formats
+* Applies Cartographer occupancy conversion
+* Performs speckle filtering
+* Publishes `/robotX/map` with TRANSIENT_LOCAL QoS
 
 ---
 
-## 📊 Verification Commands
+## 🔄 Map Merger
+
+Combines:
+
+```text
+/robot1/map
++
+/robot2/map
+=
+/merged_map
+```
+
+Uses live TF lookups instead of static offsets, automatically accounting for Cartographer pose graph optimization.
+
+---
+
+## 🎯 Frontier Exploration
+
+Autonomously discovers and explores unknown regions by:
+
+1. Detecting frontiers.
+2. Ranking candidates.
+3. Selecting exploration goals.
+4. Sending Nav2 goals.
+
+---
+
+## 🤝 Frontier Coordination
+
+Prevents duplicate exploration.
+
+Mechanism:
+
+* Robots publish claimed frontiers.
+* Claimed frontiers are ignored by teammates.
+* Claims automatically expire after timeout.
+
+---
+
+## 🚧 Collision Avoidance
+
+Each robot publishes its footprint as an obstacle.
+
+The teammate's Nav2 costmap treats the footprint as a dynamic obstacle, preventing path planning through occupied robot locations.
+
+---
+
+# 📊 Verification Commands
+
+## Map Inspection
 
 ```bash
-# Frontier visualization
+ros2 topic echo /robot1/map --once --field data | head -20
+```
+
+## Frontier Visualization
+
+```bash
 ros2 topic echo /robot1/frontier_markers --once
+```
 
-# Exploration status
+## Exploration Status
+
+```bash
 ros2 topic echo /robot1/exploration_status --once
+```
 
-# Swarm completion
+## Swarm Completion
+
+```bash
 ros2 topic echo /swarm/exploration_done --once
 ```
 
 ---
 
-## 🐛 Common Issues
+# 🐛 Common Issues
 
 | Problem                 | Cause                          | Fix                                 |
 | ----------------------- | ------------------------------ | ----------------------------------- |
@@ -208,16 +303,17 @@ ros2 topic echo /swarm/exploration_done --once
 
 ---
 
-## 📝 License
+# 📝 License
 
 Developed for academic and research purposes.
 
 ---
 
-## 🙏 Acknowledgments
+# 🙏 Acknowledgments
 
 * Google Cartographer
 * Nav2
 * TurtleBot3
 * Gazebo Classic
 * ROS 2 Humble
+* Open Source Robotics Community
